@@ -1,17 +1,18 @@
-import React from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
-import { useLocalSearchParams, router } from 'expo-router';
-import { clothes } from '../data/clothes';
-export default function ItemDetails() {
- const {id} = useLocalSearchParams<{id:string}>();
- const item=clothes.find(x=>x.id===id);
- if(!item)return <View style={s.page}><Text>Item not found.</Text><Pressable onPress={()=>router.back()}><Text>Go back</Text></Pressable></View>;
- return <ScrollView style={s.page} contentContainerStyle={{padding:22}}>
-  <View style={s.photo}><Text style={{fontSize:110}}>{item.emoji}</Text></View>
-  <Text style={s.title}>{item.name}</Text><Text style={s.muted}>{item.category} · {item.color}</Text>
-  <Text style={s.label}>About this item</Text><Text style={s.muted}>{item.notes}</Text>
-  <Pressable style={s.button} onPress={()=>router.push('/recommendations')}><Text style={s.buttonText}>Find outfits with this item</Text></Pressable>
-  <Text style={s.muted}>Virtual try-on integration coming soon.</Text>
- </ScrollView>;
+import React,{useCallback,useState} from 'react';
+import {ActivityIndicator,Image,Text,View} from 'react-native';
+import {router,useFocusEffect,useLocalSearchParams} from 'expo-router';
+import {Button,COLORS,Heading,Page,s} from '../components/ui';
+import {ClosetItem,getItem} from '../lib/api';
+import {categoryEmoji} from '../data/sample';
+import {useAuth} from '../lib/auth-context';
+export default function ItemDetails(){const {id}=useLocalSearchParams<{id:string}>();const {session}=useAuth();const[item,setItem]=useState<ClosetItem|null>(null);const[error,setError]=useState('');const[loading,setLoading]=useState(true);
+  useFocusEffect(useCallback(()=>{if(!id||!session){setLoading(false);return;}let alive=true;setLoading(true);getItem(id).then(i=>{if(alive)setItem(i)}).catch(e=>{if(alive)setError(String(e))}).finally(()=>{if(alive)setLoading(false)});return()=>{alive=false}},[id,session?.access_token]));
+  if(!session)return <Page><Heading title="Sign in to view items"/><Button label="Log In" onPress={()=>router.replace('/auth')}/></Page>;
+  if(loading)return <Page><ActivityIndicator/></Page>;
+  if(!item)return <Page><Heading title="Item not found" sub={error||'No saved item matches this link.'}/><Button label="Back to Closet" onPress={()=>router.replace('/closet')}/></Page>;
+  const url=item.signed_image_url||item.image_signed_url||item.image_url;
+  return <Page><Heading title={item.subcategory||'Clothing Item'} sub="Saved in your private closet"/><View style={[s.card,{alignItems:'center',minHeight:230,justifyContent:'center'}]}>{url?<Image source={{uri:url}} style={{width:'100%',height:250}} resizeMode="contain"/>:<Text style={{fontSize:90}}>{categoryEmoji[item.category]||'👚'}</Text>}</View>
+    {([['Category',item.category],['Color',item.color],['Brand',item.brand],['Size',item.tag_size||item.size]] as const).map(([label,v])=><View key={label} style={{paddingVertical:14,borderBottomWidth:1,borderBottomColor:COLORS.border,flexDirection:'row',justifyContent:'space-between'}}><Text style={{fontWeight:'700'}}>{label}</Text><Text style={{color:COLORS.muted}}>{v||'Not specified'}</Text></View>)}
+    <Button label="Find Outfits" onPress={()=>router.push('/recommendations')}/><Button label="Back to Closet" secondary onPress={()=>router.replace('/closet')}/>
+  </Page>
 }
-const s=StyleSheet.create({page:{flex:1,backgroundColor:'#F8F5F0'},photo:{height:290,backgroundColor:'#EFE3D5',borderRadius:20,justifyContent:'center',alignItems:'center'},title:{fontSize:30,fontWeight:'800',marginTop:22},label:{fontWeight:'700',fontSize:18,marginTop:26,marginBottom:8},muted:{color:'#706760',marginTop:8,fontSize:15},button:{backgroundColor:'#A84E16',padding:17,borderRadius:13,alignItems:'center',marginTop:30,marginBottom:12},buttonText:{color:'white',fontWeight:'700'}});
