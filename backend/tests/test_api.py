@@ -29,9 +29,22 @@ def test_health():
     assert client.get("/health").json() == {"status": "ok"}
 
 
+def test_health_does_not_wait_for_classifier_initialization(monkeypatch):
+    class SlowClassifier:
+        def __init__(self):
+            time.sleep(0.2)
+
+    monkeypatch.setattr("app.main.FashionClipClassifier", SlowClassifier)
+
+    with TestClient(app) as startup_client:
+        assert startup_client.get("/health").json() == {"status": "ok"}
+
+
 def test_protected_route_requires_token():
     assert client.get("/api/items").status_code == 401
     assert client.get("/api/items/fit-feedback/history").status_code == 401
+    assert client.get("/api/recommendations").status_code == 401
+    assert client.get("/api/recommendations/saved").status_code == 401
 
 
 def test_rejects_bad_token():

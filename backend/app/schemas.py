@@ -1,4 +1,5 @@
 from typing import Any, Literal
+from uuid import UUID
 
 from pydantic import BaseModel, Field, HttpUrl
 
@@ -86,6 +87,20 @@ class FitFeedbackUpdate(BaseModel):
     overall_fit: OverallFit | None = None
     issues: list[FitIssue] | None = None
     notes: str | None = None
+
+
+class OutfitAction(BaseModel):
+    item_ids: list[UUID] = Field(min_length=2, max_length=5)
+    occasion: str = Field(min_length=1, max_length=80)
+
+
+class SaveOutfitRequest(OutfitAction):
+    explanation: str = Field(max_length=500)
+    ranking_score: float = Field(ge=0, le=100)
+
+
+class RecommendationFeedbackRequest(OutfitAction):
+    helpful: bool
 
 
 class LinkedProductCreate(BaseModel):

@@ -16,10 +16,20 @@ export async function apiRequest(path, options = {}, { allowAnonymous = false } 
     throw new Error('Supabase is not configured. Add the frontend environment variables to use the API.');
   }
 
-  const response = await fetch(`${API_URL}${path.startsWith('/') ? path : `/${path}`}`, {
-    ...options,
-    headers,
-  });
+  let response;
+  try {
+    response = await fetch(`${API_URL}${path.startsWith('/') ? path : `/${path}`}`, {
+      ...options,
+      headers,
+    });
+  } catch (error) {
+    if (error instanceof TypeError) {
+      throw new Error(
+        `Could not connect to the API at ${API_URL}. Start the backend and check its CORS settings.`,
+      );
+    }
+    throw error;
+  }
   if (!response.ok) {
     let detail = '';
     try {

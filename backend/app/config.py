@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     signed_url_ttl_seconds: int = 3600
     allow_demo_classification: bool = False
     # Comma-separated list of frontend origins
-    cors_origins: str = "http://localhost:5173"
+    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 
     @property
     def cors_origin_list(self) -> list[str]:
