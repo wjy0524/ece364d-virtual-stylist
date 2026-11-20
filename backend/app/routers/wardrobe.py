@@ -4,6 +4,7 @@ from supabase import Client
 
 from app.config import Settings, get_settings
 from app.deps import CurrentUser, get_classification_user, get_current_user, get_db
+from app.image_utils import with_image_url
 from app.schemas import ClothingItemCreate, ClothingItemUpdate, FitFeedbackCreate, FitFeedbackUpdate
 from virtual_stylist_ai.clothing_classifier import FashionClipClassifier
 
@@ -21,21 +22,10 @@ def _get_item(db: Client, item_id: str) -> dict:
     return rows[0]
 
 
-def _with_image_url(db: Client, item: dict, settings: Settings) -> dict:
-    if item.get("image_path"):
-        signed = db.storage.from_(settings.storage_bucket).create_signed_url(
-            item["image_path"], settings.signed_url_ttl_seconds
-        )
-        item["image_url"] = signed.get("signedURL") or signed.get("signedUrl")
-    else:
-        item["image_url"] = None
-    return item
-
-
 @router.get("")
 def list_items(db: Client = Depends(get_db), settings: Settings = Depends(get_settings)):
     items = db.table("clothing_items").select("*").order("created_at", desc=True).execute().data
-    return [_with_image_url(db, i, settings) for i in items]
+    return [with_image_url(db, i, settings) for i in items]
 
 
 @router.get("/fit-feedback/history")
@@ -69,7 +59,13 @@ async def classify_image(
 
     classifier: FashionClipClassifier | None = getattr(request.app.state, "clothing_classifier", None)
     if classifier is None:
-        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Image classification is not available")
+        classifier_status = getattr(request.app.state, "clothing_classifier_status", "failed")
+        detail = (
+            "Image classification is still loading. Please retry in a moment."
+            if classifier_status == "loading"
+            else "Image classification is unavailable. Check the backend logs."
+        )
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail)
     try:
         return await run_in_threadpool(classifier.predict, data)
     except ValueError as exc:
@@ -78,7 +74,7 @@ async def classify_image(
 
 @router.get("/{item_id}")
 def get_item(item_id: str, db: Client = Depends(get_db), settings: Settings = Depends(get_settings)):
-    return _with_image_url(db, _get_item(db, item_id), settings)
+    return with_image_url(db, _get_item(db, item_id), settings)
 
 
 @router.patch("/{item_id}")
@@ -117,7 +113,7 @@ async def upload_image(
         path, data, {"content-type": file.content_type, "upsert": "true"}
     )
     item = db.table("clothing_items").update({"image_path": path}).eq("id", item_id).execute().data[0]
-    return _with_image_url(db, item, settings)
+    return with_image_url(db, item, settings)
 
 
 @router.get("/{item_id}/fit-feedback")
