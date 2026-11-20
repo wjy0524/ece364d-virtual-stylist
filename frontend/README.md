@@ -1,51 +1,56 @@
-# Frontend (Yasir)
+# Welcome to your Expo app 👋
 
-React + Vite. From this directory, install dependencies and start the dev server:
+This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+
+## Get started
+
+1. Install dependencies
+
+   ```bash
+   npm install
+   ```
+
+2. Start the app
+
+   ```bash
+   npx expo start
+   ```
+
+In the output, you'll find options to open the app in a
+
+- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
+- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
+- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
+- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+
+You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+
+## Get a fresh project
+
+When you're ready, run:
 
 ```bash
-npm install
-npm run dev
+npm run reset-project
 ```
 
-Copy `.env.example` to `.env.local` and add your Supabase project URL and
-publishable (anon) key. `VITE_API_URL` should point to the running backend.
+This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
 
-The Add an item form sends a selected image to `POST /api/items/classify`,
-displays the top two FashionCLIP suggestions, and lets the user edit the broad
-category and clothing type before saving. Saving creates the item through the
-backend and uploads the photo to its private Supabase Storage bucket. If
-classification is unavailable, the category and type can be entered manually.
-Without a Supabase session, the current demo mode continues to save small sample
-items in browser storage; it does not persist them to the backend. To test
-classification without a session, set `ALLOW_DEMO_CLASSIFICATION=true` in
-`backend/.env` and restart the backend. This is a local-development-only option;
-leave it disabled outside local testing.
+### Other setup steps
 
-API docs: http://localhost:8000/docs
+- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
+- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
+- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
 
-## Accounts
+## Learn more
 
-The login page supports email/password sign-up and sign-in through Supabase
-Auth. Configure `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in
-`.env.local`, then restart the Vite dev server. Protected app pages send signed
-out users to `/login`; use the sign-out control in the header to end a session.
-If Supabase is not configured, the app stays in its existing demo mode and
-account forms are disabled.
+To learn more about developing your project with Expo, look at the following resources:
 
-The local API allows frontend origins at both `http://localhost:5173` and
-`http://127.0.0.1:5173` by default.
+- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
+- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
 
-Supabase may require email confirmation before a new account can sign in,
-depending on the project's Auth settings.
+## Join the community
 
-## Recommendations
+Join our community of developers creating universal apps.
 
-The recommendations page requests up to three deterministic outfit
-combinations from the signed-in user's wardrobe. It uses saved aesthetics,
-preferred fits, and occasions along with available garment colors, style tags,
-and private-storage photos; unavailable metadata is called out on the page.
-Recommendations use only complete top + bottom + shoes or dress + shoes looks,
-with an optional owned layer or accessory. Run
-`backend/supabase/migrations/0003_recommendations.sql` in the Supabase SQL
-editor before using saved looks or helpful/not-helpful feedback. Those
-interactions are stored per user and protected with row-level security.
+- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
+- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
