@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "virtual-stylist-ai"
+version = "0.1.0"
+description = "Server-side AI services for the Virtual Stylist"
+requires-python = ">=3.10"
+dependencies = [
+    "Pillow>=10,<12",
+    "torch>=2.2,<3",
+    "transformers>=4.40,<5",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["virtual_stylist_ai*"]
