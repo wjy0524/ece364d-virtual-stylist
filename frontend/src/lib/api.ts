@@ -1,9 +1,28 @@
+import { Platform } from 'react-native';
+import { File as DeviceFile } from 'expo-file-system';
 import { supabase } from './supabase';
+
+type Photo = { uri: string; name?: string | null; mimeType?: string | null };
+// Expo's fetch (SDK 52+) rejects React Native's old {uri, name, type} parts with
+// "Unsupported FormDataPart implementation"; it needs a part exposing bytes().
+// Browsers need a real File built from the picked image's Blob.
+async function photoForm(photo: Photo) {
+  const name = photo.name || `garment-${Date.now()}.jpg`;
+  const type = photo.mimeType || 'image/jpeg';
+  const form = new FormData();
+  if (Platform.OS === 'web') {
+    const blob = await (await fetch(photo.uri)).blob();
+    form.append('file', new File([blob], name, { type: blob.type || type }));
+  } else {
+    form.append('file', { name, type, bytes: () => new DeviceFile(photo.uri).bytes() } as any);
+  }
+  return form;
+}
 export type Category = 'top' | 'bottom' | 'dress' | 'layer' | 'shoes' | 'accessory';
 export type ClosetItem = {
   id: string; category: Category; subcategory?: string | null;
   color?: string | null; brand?: string | null;
-  size?: string | null; tag_size?: string | null;
+  size?: string | null; tag_size?: string | null; size_label?: string | null;
   image_url?: string | null; signed_image_url?: string | null;
   image_signed_url?: string | null; image_path?: string | null;
   created_at?: string;
@@ -48,18 +67,11 @@ export function createItem({ tag_size, ...input }: { category: Category; subcate
   return apiRequest<ClosetItem>('/api/items', { method: 'POST', body: JSON.stringify({ ...input, size_label: tag_size }) });
 }
 export type Classification = { top_prediction: { category: Category; subcategory?: string | null } };
-export function classifyImage(photo: { uri: string; name?: string | null; mimeType?: string | null }) {
-  const form = new FormData();
-  form.append('file', { uri: photo.uri, name: photo.name || 'clothing.jpg', type: photo.mimeType || 'image/jpeg' } as any);
-  return apiRequest<Classification>('/api/items/classify', { method: 'POST', body: form });
+export async function classifyImage(photo: Photo) {
+  return apiRequest<Classification>('/api/items/classify', { method: 'POST', body: await photoForm(photo) });
 }
-export async function uploadItemImage(id: string, photo: { uri: string; name?: string | null; mimeType?: string | null }) {
-  const name = photo.name || `garment-${Date.now()}.jpg`;
-  const mimeType = photo.mimeType || 'image/jpeg';
-  const form = new FormData();
-  // React Native's fetch supports a {uri, name, type} file part.
-  form.append('file', { uri: photo.uri, name, type: mimeType } as any);
-  return apiRequest<unknown>(`/api/items/${encodeURIComponent(id)}/image`, { method: 'POST', body: form });
+export async function uploadItemImage(id: string, photo: Photo) {
+  return apiRequest<unknown>(`/api/items/${encodeURIComponent(id)}/image`, { method: 'POST', body: await photoForm(photo) });
 }
 export type Outfit = {
   id: string; occasion: string; items: ClosetItem[]; explanation: string; ranking_score: number;

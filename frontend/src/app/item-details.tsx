@@ -12,7 +12,7 @@ export default function ItemDetails(){const {id}=useLocalSearchParams<{id:string
   if(!item)return <Page><Heading title="Item not found" sub={error||'No saved item matches this link.'}/><Button label="Back to Closet" onPress={()=>router.replace('/closet')}/></Page>;
   const url=item.signed_image_url||item.image_signed_url||item.image_url;
   return <Page><Heading title={item.subcategory||'Clothing Item'} sub="Saved in your private closet"/><View style={[s.card,{alignItems:'center',minHeight:230,justifyContent:'center'}]}>{url?<Image source={{uri:url}} style={{width:'100%',height:250}} resizeMode="contain"/>:<Text style={{fontSize:90}}>{categoryEmoji[item.category]||'👚'}</Text>}</View>
-    {([['Category',item.category],['Color',item.color],['Brand',item.brand],['Size',item.tag_size||item.size]] as const).map(([label,v])=><View key={label} style={{paddingVertical:14,borderBottomWidth:1,borderBottomColor:COLORS.border,flexDirection:'row',justifyContent:'space-between'}}><Text style={{fontWeight:'700'}}>{label}</Text><Text style={{color:COLORS.muted}}>{v||'Not specified'}</Text></View>)}
+    {([['Category',item.category],['Color',item.color],['Brand',item.brand],['Size',item.size_label||item.tag_size||item.size]] as const).map(([label,v])=><View key={label} style={{paddingVertical:14,borderBottomWidth:1,borderBottomColor:COLORS.border,flexDirection:'row',justifyContent:'space-between'}}><Text style={{fontWeight:'700'}}>{label}</Text><Text style={{color:COLORS.muted}}>{v||'Not specified'}</Text></View>)}
     <Button label="Find Outfits" onPress={()=>router.push('/recommendations')}/><Button label="Back to Closet" secondary onPress={()=>router.replace('/closet')}/>
   </Page>
 }
