@@ -99,3 +99,15 @@ def test_fit_feedback_accepts_directional_fit_and_structured_areas():
         {"area": "shoulders", "issue": "tight"},
         {"area": "sleeves", "issue": "short"},
     ]
+
+
+def test_outfit_routes_require_token():
+    assert client.post("/api/outfits/recommend").status_code == 401
+    assert client.get("/api/outfits").status_code == 401
+    assert client.patch("/api/outfits/abc", json={"saved": True}).status_code == 401
+
+
+def test_outfit_reaction_is_validated():
+    token = make_token()
+    res = client.patch("/api/outfits/abc", json={"reaction": "love it"}, headers={"Authorization": f"Bearer {token}"})
+    assert res.status_code == 422

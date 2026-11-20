@@ -26,7 +26,7 @@ uvicorn app.main:app --reload
 
 1. Create a project at supabase.com.
 2. SQL Editor → paste and run `supabase/migrations/0001_init.sql`. This creates the tables, RLS policies, sign-up trigger and the private `closet-images` bucket.
-3. Run `supabase/migrations/0002_fit_feedback_details.sql` to add garment cut and the expanded fit-feedback scale.
+3. Run `supabase/migrations/0002_fit_feedback_details.sql` to add garment cut and the expanded fit-feedback scale, then `0003_outfits.sql` for outfit suggestions.
 4. Authentication → Providers → Email: enabled (turn off "Confirm email" while developing).
 5. Copy the project URL and anon key into `.env` (and share them with the frontend).
 
@@ -68,8 +68,13 @@ All `/api/*` routes need `Authorization: Bearer <supabase access token>`.
 | GET / POST | `/api/items/{id}/fit-feedback` | read fit history for an item / add feedback |
 | PUT | `/api/items/{id}/fit-feedback/{feedback_id}` | edit an existing fit feedback entry |
 | GET / POST | `/api/products` | linked shopping products (import logic: Week 5) |
+| POST | `/api/outfits/recommend` | suggest up to 3 outfits from the user's closet (optional body `{"occasion": "casual"}`); results are stored |
+| GET | `/api/outfits?saved=true` | list suggested outfits (optionally only saved ones), with item details |
+| PATCH | `/api/outfits/{id}` | `{"saved": true}` and/or `{"reaction": "helpful" \| "not_helpful" \| null}` |
 
-Coming later: `POST /api/outfits/recommend` (Week 4), `POST /api/products/{id}/size` (Week 6).
+Coming later: `POST /api/products/{id}/size` (Week 6).
+
+Outfit suggestions come from `ai/virtual_stylist_ai/outfit_recommender.py` (rule-based for now). A better recommender can replace `recommend_outfits` as long as it keeps the same inputs and return shape. Run `supabase/migrations/0003_outfits.sql` once to create the `outfits` table.
 
 Size prediction is not implemented yet. The frontend's temporary test garment
 flow stores sample garment and fit-history data only in the browser so sizing

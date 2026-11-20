@@ -90,3 +90,16 @@ class FitFeedbackUpdate(BaseModel):
 
 class LinkedProductCreate(BaseModel):
     url: HttpUrl
+
+
+OutfitReaction = Literal["helpful", "not_helpful"]
+
+
+class OutfitRequest(BaseModel):
+    occasion: str | None = Field(default=None, max_length=50, examples=["casual"])
+
+
+class OutfitUpdate(BaseModel):
+    saved: bool | None = None
+    # send null to clear a reaction
+    reaction: OutfitReaction | None = None

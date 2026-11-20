@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.routers import products, profile, wardrobe
+from app.routers import outfits, products, profile, wardrobe
 from virtual_stylist_ai.clothing_classifier import FashionClipClassifier
 
 
@@ -27,6 +27,7 @@ app.add_middleware(
 app.include_router(profile.router)
 app.include_router(wardrobe.router)
 app.include_router(products.router)
+app.include_router(outfits.router)
 
 
 @app.get("/health", tags=["meta"])
