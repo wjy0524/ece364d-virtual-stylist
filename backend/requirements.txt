@@ -4,6 +4,7 @@ supabase==2.33.0
 pydantic-settings==2.16.1
 PyJWT[crypto]==2.15.1
 python-multipart==0.0.32
+-e ../ai
 
 # dev
 pytest==9.1.1

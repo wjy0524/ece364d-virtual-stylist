@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
+from fastapi.concurrency import run_in_threadpool
 from supabase import Client
 
 from app.config import Settings, get_settings
-from app.deps import CurrentUser, get_current_user, get_db
-from app.schemas import ClothingItemCreate, ClothingItemUpdate, FitFeedbackCreate
+from app.deps import CurrentUser, get_classification_user, get_current_user, get_db
+from app.schemas import ClothingItemCreate, ClothingItemUpdate, FitFeedbackCreate, FitFeedbackUpdate
+from virtual_stylist_ai.clothing_classifier import FashionClipClassifier
 
 router = APIRouter(prefix="/api/items", tags=["wardrobe"])
 
@@ -36,10 +38,42 @@ def list_items(db: Client = Depends(get_db), settings: Settings = Depends(get_se
     return [_with_image_url(db, i, settings) for i in items]
 
 
+@router.get("/fit-feedback/history")
+def list_user_fit_feedback(db: Client = Depends(get_db)):
+    return (
+        db.table("fit_feedback")
+        .select("*, clothing_items(id, name, category, subcategory, brand, size_label, garment_cut)")
+        .order("created_at", desc=True)
+        .execute()
+        .data
+    )
+
+
 @router.post("", status_code=status.HTTP_201_CREATED)
 def create_item(body: ClothingItemCreate, user: CurrentUser = Depends(get_current_user), db: Client = Depends(get_db)):
     row = {"user_id": user.id, **body.model_dump(exclude_none=True)}
     return db.table("clothing_items").insert(row).execute().data[0]
+
+
+@router.post("/classify")
+async def classify_image(
+    request: Request,
+    file: UploadFile = File(...),
+    user: CurrentUser | None = Depends(get_classification_user),
+):
+    if file.content_type not in ALLOWED_IMAGE_TYPES:
+        raise HTTPException(status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, "Use JPEG, PNG, WEBP or HEIC")
+    data = await file.read(MAX_IMAGE_BYTES + 1)
+    if len(data) > MAX_IMAGE_BYTES:
+        raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "Image must be 10 MB or smaller")
+
+    classifier: FashionClipClassifier | None = getattr(request.app.state, "clothing_classifier", None)
+    if classifier is None:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Image classification is not available")
+    try:
+        return await run_in_threadpool(classifier.predict, data)
+    except ValueError as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
 
 
 @router.get("/{item_id}")
@@ -99,3 +133,38 @@ def add_fit_feedback(
     _get_item(db, item_id)
     row = {"user_id": user.id, "item_id": item_id, **body.model_dump(mode="json")}
     return db.table("fit_feedback").insert(row).execute().data[0]
+
+
+@router.put("/{item_id}/fit-feedback/{feedback_id}")
+def update_fit_feedback(
+    item_id: str,
+    feedback_id: str,
+    body: FitFeedbackUpdate,
+    db: Client = Depends(get_db),
+):
+    _get_item(db, item_id)
+    rows = (
+        db.table("fit_feedback")
+        .select("id")
+        .eq("id", feedback_id)
+        .eq("item_id", item_id)
+        .execute()
+        .data
+    )
+    if not rows:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Fit feedback not found")
+    changes = body.model_dump(exclude_unset=True, mode="json")
+    if not changes:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Provide at least one field to update")
+    if ("overall_fit" in changes and changes["overall_fit"] is None) or (
+        "issues" in changes and changes["issues"] is None
+    ):
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Overall fit and issues cannot be null")
+    return (
+        db.table("fit_feedback")
+        .update(changes)
+        .eq("id", feedback_id)
+        .eq("item_id", item_id)
+        .execute()
+        .data[0]
+    )

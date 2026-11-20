@@ -20,13 +20,15 @@ Scope follows the Prior Art report (Ch. 5). This semester builds Tier 2 (wardrob
 
 ```
 React + Vite (frontend/)  ──REST + Supabase JWT──▶  FastAPI (backend/)  ──▶  Supabase (Postgres, Auth, private Storage)
-        │                                                  │
-        └── Supabase Auth (sign-in) ◀──────────────────────┘──▶  Recommendation logic (ai/)
+        │                                                  ├──▶  FashionCLIP image classification (ai/)
+        └── Supabase Auth (sign-in) ◀──────────────────────┘
 ```
 
 - The frontend signs users in with **Supabase Auth** and sends the access token to the API as `Authorization: Bearer <token>`.
 - The backend talks to Supabase **as that user**, so Row Level Security guarantees nobody can read another user's closet.
 - Clothing photos live in the private `closet-images` bucket; the API returns short-lived signed URLs.
+- Clothing images are classified on the backend with the FashionCLIP module in `ai/`; the model is loaded once per backend process.
+- Size recommendation from fit history is not implemented yet; outfit cards remain static demo examples. The closet supports temporary browser-only test garments to collect structured sizing/fit evidence.
 
 ## Workflow
 

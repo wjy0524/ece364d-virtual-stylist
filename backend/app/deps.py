@@ -51,6 +51,17 @@ def get_current_user(
     return CurrentUser(id=claims["sub"], email=claims.get("email"), token=creds.credentials)
 
 
+def get_classification_user(
+    creds: HTTPAuthorizationCredentials | None = Depends(bearer),
+    settings: Settings = Depends(get_settings),
+) -> CurrentUser | None:
+    if creds is None:
+        if settings.allow_demo_classification:
+            return None
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Missing bearer token")
+    return get_current_user(creds=creds, settings=settings)
+
+
 def get_db(
     user: CurrentUser = Depends(get_current_user),
     settings: Settings = Depends(get_settings),

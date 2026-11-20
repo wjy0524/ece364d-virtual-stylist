@@ -1,10 +1,42 @@
 # AI / Recommendations (Avery)
 
-Planned modules:
+## Clothing classification
+
+The backend uses `virtual_stylist_ai.clothing_classifier.FashionClipClassifier`
+to classify uploaded clothing images with Hugging Face's
+`patrickjohncyh/fashion-clip` model. The pipeline is initialized once when the
+backend starts and returns the two highest-scoring labels. Candidate
+descriptions are kept exactly as tested:
+
+| Clothing type | Candidate description | Saved category |
+|---|---|---|
+| T-shirt | `a t-shirt` | top |
+| Tank top | `a tank top` | top |
+| Blouse | `a blouse` | top |
+| Sweater | `a sweater` | top |
+| Jeans | `a pair of jeans` | bottom |
+| Pants | `a pair of trousers` | bottom |
+| Shorts | `a pair of shorts` | bottom |
+| Skirt | `a long or short skirt with a waistband` | bottom |
+| Dress | `a one-piece dress worn from shoulders to hem` | dress |
+| Sneakers | `a pair of sneakers` | shoes |
+| Boots | `a pair of boots` | shoes |
+| Heels | `a pair of high heels` | shoes |
+
+Install the AI package and its runtime dependencies from `backend/` with
+`pip install -r requirements.txt`. The first backend startup downloads model
+weights from Hugging Face; weights are cached outside the repository. CPU
+inference works by default. A CUDA-enabled PyTorch install uses the available
+GPU automatically.
+
+The app sends image bytes to the backend. Google Cloud Storage, Colab
+authentication, notebook batch evaluation, and Pandas are not part of the
+application.
+
+## Other planned modules
 
 - `outfit_recommendation/` — combine closet items into 3 ranked outfits using style preferences
 - `size_recommendation/` — compare owned garments + fit feedback against retailer size charts; return "not enough information" instead of guessing
-- `tagging/` — suggest broad category (top / bottom / dress / shoes …) from a photo; user confirms
 - `virtual_tryon/` — Spring 2027
 
 Input data shapes match the database tables in `backend/supabase/migrations/0001_init.sql`
